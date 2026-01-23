@@ -101,7 +101,8 @@ def project_list_view(request):
 def project_detail_view(request, pk):
     """View to display project details."""
     project = get_object_or_404(Project, pk=pk, owner=request.user)
-    return render(request, "projects/project_detail.html", {"project": project})
+    sprints_count = project.sprints.count()
+    return render(request, "projects/project_detail.html", {"project": project, "sprints_count": sprints_count})
 
 
 @login_required
@@ -340,7 +341,7 @@ def sprint_update(request, sprint_id):
     return render(
         request,
         "sprints/sprint_form.html",
-        {"project": project, "form": form, "mode": "edit", "sprint": sprint},
+        {"project": project, "form": form, "mode": "edit", "sprint": sprint, "title":"Editar Sprint", "button_text":"Editar" },
     )
 
 
