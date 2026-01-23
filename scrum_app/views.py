@@ -315,7 +315,7 @@ def sprint_create(request, project_id):
     return render(
         request,
         "sprints/sprint_form.html",
-        {"project": project, "form": form, "mode": "create"},
+        {"project": project, "form": form, "mode": "create", "title": "Nova Sprint", "button_text":"Criar"},
     )
 
 
