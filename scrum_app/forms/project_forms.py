@@ -75,8 +75,8 @@ class SprintForm(forms.ModelForm):
                     "rows": 4,
                 }
             ),
-            "start_date": forms.DateInput(attrs={"class": "form-control", "type": "date"}),
-            "end_date": forms.DateInput(attrs={"class": "form-control", "type": "date"}),
+            "start_date": forms.DateInput(attrs={"class": "form-control", "type": "date"}, format="%Y-%m-%d",),
+            "end_date": forms.DateInput(attrs={"class": "form-control", "type": "date"}, format="%Y-%m-%d",),
             "status": forms.Select(attrs={"class": "form-select"}),
         }
 
