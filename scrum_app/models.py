@@ -272,14 +272,19 @@ class UserStory(models.Model):
         return str(self.title)
 
     def clean(self):
+        # print(self.product_backlog, self.sprint_backlog)
+
         # Uma user story deve estar em apenas um backlog
-        if self.product_backlog and self.sprint_backlog:
+        has_product = self.product_backlog is not None
+        has_sprint = self.sprint_backlog is not None
+
+        if has_product and has_sprint:
             raise ValidationError(
                 "Uma User Story não pode estar em Product Backlog e Sprint Backlog simultaneamente."
             )
 
         # Uma user story deve estar em pelo menos um backlog
-        if not self.product_backlog and not self.sprint_backlog:
+        if not has_product and not has_sprint:
             raise ValidationError(
                 "Uma User Story deve estar associada a um Product Backlog ou Sprint Backlog."
             )

@@ -62,6 +62,8 @@ python manage.py populate_db [opções]
 - `--projects N`: Número de projetos por usuário (padrão: 5)
 - `--sprints N`: Número máximo de sprints por projeto (padrão: 3)
 - `--stories N`: Número máximo de user stories por backlog (padrão: 5)
+- `--tasks N`: Número máximo de tasks por user story (padrão: 5)
+- `--comments N`: Número máximo de comentários por task (padrão: 3)
 - `--clear`: Limpar dados existentes antes de popular
 
 **Exemplos:**
@@ -70,8 +72,8 @@ python manage.py populate_db [opções]
 # Criar dados com valores padrão
 python manage.py populate_db
 
-# Criar 5 usuários, 3 projetos cada, com até 2 sprints e 10 user stories
-python manage.py populate_db --users 5 --projects 3 --sprints 2 --stories 10
+# Criar 5 usuários, 3 projetos cada, com até 2 sprints, 10 user stories, 8 tasks e 5 comentários
+python manage.py populate_db --users 5 --projects 3 --sprints 2 --stories 10 --tasks 8 --comments 5
 
 # Limpar banco e criar novos dados
 python manage.py populate_db --clear

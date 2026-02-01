@@ -56,6 +56,18 @@ class UserStoryForm(forms.ModelForm):
             "status": forms.Select(attrs={"class": "form-select"}),
         }
 
+    def _post_clean(self):
+        """
+        Override to skip model instance validation.
+        
+        The backlog will be assigned by the service layer, so we don't want
+        to validate the model instance here (which would fail because backlog
+        is not yet assigned).
+        """
+        # Skip the model validation that would normally happen here
+        # The service layer will call full_clean() after assigning the backlog
+        pass
+
 
 class MoveUserStoryForm(forms.Form):
     """Form for moving a user story between backlogs."""

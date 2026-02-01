@@ -51,6 +51,18 @@ class Command(BaseCommand):
             help="Maximum number of user stories per backlog (default: 5)",
         )
         parser.add_argument(
+            "--tasks",
+            type=int,
+            default=5,
+            help="Maximum number of tasks per user story (default: 5)",
+        )
+        parser.add_argument(
+            "--comments",
+            type=int,
+            default=3,
+            help="Maximum number of comments per task (default: 3)",
+        )
+        parser.add_argument(
             "--clear", action="store_true", help="Clear existing data before populating"
         )
 
@@ -60,6 +72,8 @@ class Command(BaseCommand):
         num_projects = options["projects"]
         max_sprints = options["sprints"]
         max_stories = options["stories"]
+        max_tasks = options["tasks"]
+        max_comments = options["comments"]
 
         if options["clear"]:
             self.stdout.write(self.style.WARNING("Clearing existing data..."))
@@ -200,7 +214,7 @@ class Command(BaseCommand):
         for project in projects_list:
             # Create product backlog and user stories
             product_backlog, _ = ProductBacklog.objects.get_or_create(project=project)
-            num_product_stories = fake.random_int(min=2, max=max_stories)
+            num_product_stories = fake.random_int(min=1, max=max_stories)
 
             for _ in range(num_product_stories):
                 title = fake.random_element(elements=user_story_titles)
@@ -286,8 +300,8 @@ class Command(BaseCommand):
             ]
             project_members = User.objects.filter(id__in=member_ids)
 
-            # Create 2-5 tasks per user story
-            num_tasks = fake.random_int(min=2, max=5)
+            # Create tasks per user story
+            num_tasks = fake.random_int(min=1, max=max_tasks)
 
             for _ in range(num_tasks):
                 task = Task.objects.create(
@@ -309,8 +323,8 @@ class Command(BaseCommand):
                 )
                 total_tasks += 1
 
-                # Add 0-3 comments to each task
-                num_comments = fake.random_int(min=0, max=3)
+                # Add comments to each task
+                num_comments = fake.random_int(min=0, max=max_comments)
                 for _ in range(num_comments):
                     TaskComment.objects.create(
                         task=task,

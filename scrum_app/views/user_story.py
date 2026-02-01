@@ -6,6 +6,7 @@ from django.shortcuts import get_object_or_404, redirect, render
 
 from scrum_app.forms.user_story_forms import MoveUserStoryForm, UserStoryForm
 from scrum_app.models import ProductBacklog, Project, Sprint, SprintBacklog, UserStory
+from scrum_app.services.user_story_service import UserStoryService
 
 
 @login_required
@@ -70,17 +71,17 @@ def user_story_create_for_product_backlog(request, project_pk):
         messages.error(request, "Você não tem permissão para acessar este projeto.")
         return redirect("project_list")
 
-    # Get or create product backlog
-    product_backlog, _ = ProductBacklog.objects.get_or_create(project=project)
-
     if request.method == "POST":
         form = UserStoryForm(request.POST)
         if form.is_valid():
-            user_story = form.save(commit=False)
-            user_story.product_backlog = product_backlog
-            user_story.save()
-            messages.success(request, "User Story criada com sucesso!")
-            return redirect("product_backlog", project_pk=project.pk)
+            try:
+                UserStoryService.create_user_story_for_product_backlog(
+                    project=project, **form.cleaned_data
+                )
+                messages.success(request, "User Story criada com sucesso!")
+                return redirect("product_backlog", project_pk=project.pk)
+            except Exception as e:
+                messages.error(request, f"Erro ao criar User Story: {str(e)}")
     else:
         form = UserStoryForm()
 
@@ -104,17 +105,17 @@ def user_story_create_for_sprint_backlog(request, sprint_pk):
         messages.error(request, "Você não tem permissão para acessar esta sprint.")
         return redirect("project_list")
 
-    # Get or create sprint backlog
-    sprint_backlog, _ = SprintBacklog.objects.get_or_create(sprint=sprint)
-
     if request.method == "POST":
         form = UserStoryForm(request.POST)
         if form.is_valid():
-            user_story = form.save(commit=False)
-            user_story.sprint_backlog = sprint_backlog
-            user_story.save()
-            messages.success(request, "User Story criada com sucesso!")
-            return redirect("sprint_backlog", sprint_pk=sprint.pk)
+            try:
+                UserStoryService.create_user_story_for_sprint_backlog(
+                    sprint=sprint, **form.cleaned_data
+                )
+                messages.success(request, "User Story criada com sucesso!")
+                return redirect("sprint_backlog", sprint_pk=sprint.pk)
+            except Exception as e:
+                messages.error(request, f"Erro ao criar User Story: {str(e)}")
     else:
         form = UserStoryForm()
 
@@ -134,11 +135,10 @@ def user_story_update_view(request, pk):
     user_story = get_object_or_404(UserStory, pk=pk)
 
     # Get project from backlog
+    project = UserStoryService.get_project_from_user_story(user_story)
     if user_story.product_backlog:
-        project = user_story.product_backlog.project
         backlog_type = "Product Backlog"
     else:
-        project = user_story.sprint_backlog.sprint.project
         backlog_type = "Sprint Backlog"
 
     # Check if user is member or owner
@@ -149,16 +149,19 @@ def user_story_update_view(request, pk):
     if request.method == "POST":
         form = UserStoryForm(request.POST, instance=user_story)
         if form.is_valid():
-            form.save()
-            messages.success(request, "User Story atualizada com sucesso!")
+            try:
+                UserStoryService.update_user_story(user_story, **form.cleaned_data)
+                messages.success(request, "User Story atualizada com sucesso!")
 
-            # Redirect based on backlog type
-            if user_story.product_backlog:
-                return redirect("product_backlog", project_pk=project.pk)
-            else:
-                return redirect(
-                    "sprint_backlog", sprint_pk=user_story.sprint_backlog.sprint.pk
-                )
+                # Redirect based on backlog type
+                if user_story.product_backlog:
+                    return redirect("product_backlog", project_pk=project.pk)
+                else:
+                    return redirect(
+                        "sprint_backlog", sprint_pk=user_story.sprint_backlog.sprint.pk
+                    )
+            except Exception as e:
+                messages.error(request, f"Erro ao atualizar User Story: {str(e)}")
     else:
         form = UserStoryForm(instance=user_story)
 
@@ -179,12 +182,11 @@ def user_story_delete_view(request, pk):
     user_story = get_object_or_404(UserStory, pk=pk)
 
     # Get project from backlog
+    project = UserStoryService.get_project_from_user_story(user_story)
     if user_story.product_backlog:
-        project = user_story.product_backlog.project
         redirect_url = "product_backlog"
         redirect_pk = project.pk
     else:
-        project = user_story.sprint_backlog.sprint.project
         redirect_url = "sprint_backlog"
         redirect_pk = user_story.sprint_backlog.sprint.pk
 
@@ -194,14 +196,18 @@ def user_story_delete_view(request, pk):
         return redirect("project_list")
 
     if request.method == "POST":
-        user_story.delete()
-        messages.success(request, "User Story excluída com sucesso!")
-        return redirect(
-            redirect_url,
-            **{
-                f"{'project' if redirect_url == 'product_backlog' else 'sprint'}_pk": redirect_pk
-            },
-        )
+        try:
+            UserStoryService.delete_user_story(user_story)
+            messages.success(request, "User Story excluída com sucesso!")
+            return redirect(
+                redirect_url,
+                **{
+                    f"{'project' if redirect_url == 'product_backlog' else 'sprint'}_pk": redirect_pk
+                },
+            )
+        except Exception as e:
+            messages.error(request, f"Erro ao excluir User Story: {str(e)}")
+            return redirect("user_story_detail", pk=pk)
 
     context = {
         "user_story": user_story,
@@ -217,10 +223,7 @@ def user_story_detail_view(request, pk):
     user_story = get_object_or_404(UserStory, pk=pk)
 
     # Get project from backlog
-    if user_story.product_backlog:
-        project = user_story.product_backlog.project
-    else:
-        project = user_story.sprint_backlog.sprint.project
+    project = UserStoryService.get_project_from_user_story(user_story)
 
     # Check if user is member or owner
     if not project.is_member(request.user):
@@ -243,10 +246,7 @@ def user_story_move_view(request, pk):
     user_story = get_object_or_404(UserStory, pk=pk)
 
     # Get project from backlog
-    if user_story.product_backlog:
-        project = user_story.product_backlog.project
-    else:
-        project = user_story.sprint_backlog.sprint.project
+    project = UserStoryService.get_project_from_user_story(user_story)
 
     # Check if user is member or owner
     if not project.is_member(request.user):
@@ -258,21 +258,24 @@ def user_story_move_view(request, pk):
         if form.is_valid():
             move_to = form.cleaned_data["move_to"]
 
-            if move_to == "product":
-                user_story.move_to_product_backlog(project)
-                messages.success(
-                    request, "User Story movida para o Product Backlog com sucesso!"
-                )
-                return redirect("product_backlog", project_pk=project.pk)
-            else:  # sprint
-                sprint_id = form.cleaned_data["sprint"]
-                sprint = get_object_or_404(Sprint, pk=sprint_id)
-                user_story.move_to_sprint(sprint)
-                messages.success(
-                    request,
-                    f"User Story movida para a Sprint '{sprint.name}' com sucesso!",
-                )
-                return redirect("sprint_backlog", sprint_pk=sprint.pk)
+            try:
+                if move_to == "product":
+                    UserStoryService.move_to_product_backlog(user_story, project)
+                    messages.success(
+                        request, "User Story movida para o Product Backlog com sucesso!"
+                    )
+                    return redirect("product_backlog", project_pk=project.pk)
+                else:  # sprint
+                    sprint_id = form.cleaned_data["sprint"]
+                    sprint = get_object_or_404(Sprint, pk=sprint_id)
+                    UserStoryService.move_to_sprint(user_story, sprint)
+                    messages.success(
+                        request,
+                        f"User Story movida para a Sprint '{sprint.name}' com sucesso!",
+                    )
+                    return redirect("sprint_backlog", sprint_pk=sprint.pk)
+            except Exception as e:
+                messages.error(request, f"Erro ao mover User Story: {str(e)}")
     else:
         # Set initial value based on current backlog
         initial = {"move_to": "sprint" if user_story.product_backlog else "product"}
