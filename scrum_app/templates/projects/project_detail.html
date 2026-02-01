@@ -102,10 +102,25 @@ Flow{%endblock %} {% block content %}
 
       <hr />
 
-      <div class="alert alert-info">
-        <i class="bi bi-info-circle"></i>
-        Novas funcionalidades para este projeto serão adicionadas em breve!
+      <h5><i class="bi bi-list-task"></i> Product Backlog</h5>
+      <div class="row">
+        <div class="col-md-12">
+          <div class="d-flex justify-content-between align-items-center mb-3">
+            <p class="mb-0">
+              <i class="bi bi-card-list"></i>
+              Gerencie as User Stories do projeto
+            </p>
+            <a
+              href="{% url 'product_backlog' project.pk %}"
+              class="btn btn-outline-success btn-sm"
+            >
+              <i class="bi bi-list-task"></i> Ver Product Backlog
+            </a>
+          </div>
+        </div>
       </div>
+
+      <hr />
     </div>
     <div class="card-footer">
       <a href="{% url 'project_list' %}" class="btn btn-secondary">

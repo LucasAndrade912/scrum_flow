@@ -9,7 +9,14 @@ from django.core.management.base import BaseCommand
 from django.utils import timezone
 from faker import Faker
 
-from scrum_app.models import Project, ProjectMember, Sprint
+from scrum_app.models import (
+    ProductBacklog,
+    Project,
+    ProjectMember,
+    Sprint,
+    SprintBacklog,
+    UserStory,
+)
 
 
 # pylint: disable=no-member
@@ -36,6 +43,12 @@ class Command(BaseCommand):
             help="Maximum number of sprints per project (default: 3)",
         )
         parser.add_argument(
+            "--stories",
+            type=int,
+            default=5,
+            help="Maximum number of user stories per backlog (default: 5)",
+        )
+        parser.add_argument(
             "--clear", action="store_true", help="Clear existing data before populating"
         )
 
@@ -44,9 +57,13 @@ class Command(BaseCommand):
         num_users = options["users"]
         num_projects = options["projects"]
         max_sprints = options["sprints"]
+        max_stories = options["stories"]
 
         if options["clear"]:
             self.stdout.write(self.style.WARNING("Clearing existing data..."))
+            UserStory.objects.all().delete()
+            SprintBacklog.objects.all().delete()
+            ProductBacklog.objects.all().delete()
             Sprint.objects.all().delete()
             ProjectMember.objects.all().delete()
             Project.objects.all().delete()
@@ -151,10 +168,86 @@ class Command(BaseCommand):
                     f'  ✓ Created {num_sprints} sprint(s) for project "{project.name}"'
                 )
 
+        # Create user stories for product backlogs and sprint backlogs
+        self.stdout.write("\nCreating user stories for backlogs...")
+        total_stories = 0
+
+        user_story_titles = [
+            "Login de usuário",
+            "Cadastro de novo usuário",
+            "Recuperação de senha",
+            "Atualização de perfil",
+            "Upload de avatar",
+            "Busca avançada",
+            "Filtros personalizados",
+            "Exportação de dados",
+            "Notificações por email",
+            "Dashboard interativo",
+            "Relatórios gerenciais",
+            "Integração com API",
+            "Sistema de comentários",
+            "Avaliação por estrelas",
+            "Compartilhamento social",
+        ]
+
+        priorities = [choice[0] for choice in UserStory.Priority.choices]
+        statuses = [choice[0] for choice in UserStory.Status.choices]
+
+        for project in projects_list:
+            # Create product backlog and user stories
+            product_backlog, _ = ProductBacklog.objects.get_or_create(project=project)
+            num_product_stories = fake.random_int(min=2, max=max_stories)
+
+            for _ in range(num_product_stories):
+                title = fake.random_element(elements=user_story_titles)
+                UserStory.objects.create(
+                    title=f"{title} - {fake.word()}",
+                    description=fake.text(max_nb_chars=200),
+                    as_a=f"Como {fake.job()}",
+                    i_want=f"Eu quero {fake.sentence(nb_words=5)}",
+                    so_that=f"Para que eu possa {fake.sentence(nb_words=6)}",
+                    acceptance_criteria=fake.text(max_nb_chars=150),
+                    story_points=fake.random_element(elements=[1, 2, 3, 5, 8, 13]),
+                    priority=fake.random_element(elements=priorities),
+                    status=fake.random_element(elements=statuses),
+                    product_backlog=product_backlog,
+                )
+                total_stories += 1
+
+            self.stdout.write(
+                f'  ✓ Created {num_product_stories} user stories for product backlog of "{project.name}"'
+            )
+
+            # Create user stories for sprint backlogs
+            sprints = project.sprints.all()
+            for sprint in sprints:
+                sprint_backlog, _ = SprintBacklog.objects.get_or_create(sprint=sprint)
+                num_sprint_stories = fake.random_int(min=1, max=max_stories)
+
+                for _ in range(num_sprint_stories):
+                    title = fake.random_element(elements=user_story_titles)
+                    UserStory.objects.create(
+                        title=f"{title} - {fake.word()}",
+                        description=fake.text(max_nb_chars=200),
+                        as_a=f"Como {fake.job()}",
+                        i_want=f"Eu quero {fake.sentence(nb_words=5)}",
+                        so_that=f"Para que eu possa {fake.sentence(nb_words=6)}",
+                        acceptance_criteria=fake.text(max_nb_chars=150),
+                        story_points=fake.random_element(elements=[1, 2, 3, 5, 8, 13]),
+                        priority=fake.random_element(elements=priorities),
+                        status=fake.random_element(elements=statuses),
+                        sprint_backlog=sprint_backlog,
+                    )
+                    total_stories += 1
+
+                self.stdout.write(
+                    f'  ✓ Created {num_sprint_stories} user stories for sprint backlog of "{sprint.name}"'
+                )
+
         self.stdout.write(
             self.style.SUCCESS(
                 f"\n✅ Successfully created {len(users)} users, {total_projects} projects, "
-                f"and {total_sprints} sprints!"
+                f"{total_sprints} sprints, and {total_stories} user stories!"
             )
         )
         self.stdout.write(

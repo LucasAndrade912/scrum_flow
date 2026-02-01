@@ -1,0 +1,139 @@
+{% extends 'base.html' %}
+
+{% block title %}Sprint Backlog - {{ sprint.name }} - Scrum Flow{% endblock %}
+
+{% block content %}
+<div class="container mt-4">
+  <nav aria-label="breadcrumb">
+    <ol class="breadcrumb">
+      <li class="breadcrumb-item"><a href="{% url 'project_list' %}">Projetos</a></li>
+      <li class="breadcrumb-item"><a href="{% url 'project_detail' project.pk %}">{{ project.name }}</a></li>
+      <li class="breadcrumb-item"><a href="{% url 'sprint_list' project.pk %}">Sprints</a></li>
+      <li class="breadcrumb-item"><a href="{% url 'sprint_detail' sprint.pk %}">{{ sprint.name }}</a></li>
+      <li class="breadcrumb-item active" aria-current="page">Sprint Backlog</li>
+    </ol>
+  </nav>
+
+  <div class="card shadow-sm">
+    <div class="card-header bg-success text-white">
+      <div class="d-flex justify-content-between align-items-center">
+        <h3 class="mb-0">
+          <i class="bi bi-kanban"></i> Sprint Backlog
+        </h3>
+        <a href="{% url 'user_story_create_sprint' sprint.pk %}" class="btn btn-light btn-sm">
+          <i class="bi bi-plus-circle"></i> Nova User Story
+        </a>
+      </div>
+    </div>
+    <div class="card-body">
+      <div class="mb-3">
+        <h6 class="text-muted">
+          <i class="bi bi-folder"></i> Projeto: <strong>{{ project.name }}</strong>
+        </h6>
+        <h6 class="text-muted">
+          <i class="bi bi-calendar-range"></i> Sprint: <strong>{{ sprint.name }}</strong>
+          <span class="badge bg-{% if sprint.status == 'ACTIVE' %}success{% elif sprint.status == 'CLOSED' %}secondary{% else %}warning{% endif %}">
+            {{ sprint.get_status_display }}
+          </span>
+        </h6>
+        <p class="text-muted mb-0">
+          <i class="bi bi-card-list"></i> Total de User Stories: <strong>{{ user_stories.count }}</strong>
+        </p>
+      </div>
+
+      <hr>
+
+      {% if user_stories %}
+        <div class="table-responsive">
+          <table class="table table-hover">
+            <thead>
+              <tr>
+                <th style="width: 40%;">Título</th>
+                <th class="text-center" style="width: 10%;">Prioridade</th>
+                <th class="text-center" style="width: 10%;">Status</th>
+                <th class="text-center" style="width: 10%;">Story Points</th>
+                <th class="text-center" style="width: 10%;">Criada em</th>
+                <th class="text-center" style="width: 20%;">Ações</th>
+              </tr>
+            </thead>
+            <tbody>
+              {% for story in user_stories %}
+                <tr>
+                  <td>
+                    <a href="{% url 'user_story_detail' story.pk %}" class="text-decoration-none">
+                      <strong>{{ story.title }}</strong>
+                    </a>
+                    {% if story.description %}
+                      <br><small class="text-muted">{{ story.description|truncatewords:15 }}</small>
+                    {% endif %}
+                  </td>
+                  <td class="text-center">
+                    {% if story.priority == 'CRITICAL' %}
+                      <span class="badge bg-danger">{{ story.get_priority_display }}</span>
+                    {% elif story.priority == 'HIGH' %}
+                      <span class="badge bg-warning text-dark">{{ story.get_priority_display }}</span>
+                    {% elif story.priority == 'MEDIUM' %}
+                      <span class="badge bg-info">{{ story.get_priority_display }}</span>
+                    {% else %}
+                      <span class="badge bg-secondary">{{ story.get_priority_display }}</span>
+                    {% endif %}
+                  </td>
+                  <td class="text-center">
+                    {% if story.status == 'DONE' %}
+                      <span class="badge bg-success">{{ story.get_status_display }}</span>
+                    {% elif story.status == 'IN_PROGRESS' %}
+                      <span class="badge bg-primary">{{ story.get_status_display }}</span>
+                    {% else %}
+                      <span class="badge bg-secondary">{{ story.get_status_display }}</span>
+                    {% endif %}
+                  </td>
+                  <td class="text-center">
+                    {% if story.story_points %}
+                      <span class="badge bg-dark">{{ story.story_points }}</span>
+                    {% else %}
+                      <span class="text-muted">-</span>
+                    {% endif %}
+                  </td>
+                  <td class="text-center">
+                    <small class="text-muted">{{ story.created_at|date:"d/m/Y" }}</small>
+                  </td>
+                  <td class="text-center">
+                    <div class="btn-group btn-group-sm" role="group">
+                      <a href="{% url 'user_story_detail' story.pk %}" class="btn btn-outline-info" title="Ver detalhes">
+                        <i class="bi bi-eye"></i>
+                      </a>
+                      <a href="{% url 'user_story_update' story.pk %}" class="btn btn-outline-primary" title="Editar">
+                        <i class="bi bi-pencil"></i>
+                      </a>
+                      <a href="{% url 'user_story_move' story.pk %}" class="btn btn-outline-secondary" title="Mover">
+                        <i class="bi bi-arrow-left-right"></i>
+                      </a>
+                      <a href="{% url 'user_story_delete' story.pk %}" class="btn btn-outline-danger" title="Excluir">
+                        <i class="bi bi-trash"></i>
+                      </a>
+                    </div>
+                  </td>
+                </tr>
+              {% endfor %}
+            </tbody>
+          </table>
+        </div>
+      {% else %}
+        <div class="alert alert-info text-center">
+          <i class="bi bi-info-circle"></i>
+          Nenhuma User Story cadastrada no Sprint Backlog.
+          <br>
+          <a href="{% url 'user_story_create_sprint' sprint.pk %}" class="btn btn-primary btn-sm mt-2">
+            <i class="bi bi-plus-circle"></i> Criar primeira User Story
+          </a>
+        </div>
+      {% endif %}
+    </div>
+    <div class="card-footer">
+      <a href="{% url 'sprint_detail' sprint.pk %}" class="btn btn-secondary">
+        <i class="bi bi-arrow-left"></i> Voltar para Sprint
+      </a>
+    </div>
+  </div>
+</div>
+{% endblock %}

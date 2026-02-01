@@ -15,11 +15,22 @@ from scrum_app.views import (
     register_view,
 )
 from scrum_app.views.sprint import (
-    sprint_list_view,
+    sprint_close_view,
     sprint_create_view,
     sprint_detail_view,
+    sprint_list_view,
     sprint_update_view,
-    sprint_close_view,)
+)
+from scrum_app.views.user_story import (
+    product_backlog_view,
+    sprint_backlog_view,
+    user_story_create_for_product_backlog,
+    user_story_create_for_sprint_backlog,
+    user_story_delete_view,
+    user_story_detail_view,
+    user_story_move_view,
+    user_story_update_view,
+)
 
 urlpatterns = [
     path("admin/", admin.site.urls),
@@ -70,5 +81,49 @@ urlpatterns = [
     path(
         "sprints/<int:sprint_id>/close/",
         sprint_close_view,
-        name="sprint_close",)
+        name="sprint_close",
+    ),
+    # Product Backlog URLs
+    path(
+        "projects/<int:project_pk>/backlog/",
+        product_backlog_view,
+        name="product_backlog",
+    ),
+    path(
+        "projects/<int:project_pk>/backlog/user-story/new/",
+        user_story_create_for_product_backlog,
+        name="user_story_create_product",
+    ),
+    # Sprint Backlog URLs
+    path(
+        "sprints/<int:sprint_pk>/backlog/",
+        sprint_backlog_view,
+        name="sprint_backlog",
+    ),
+    path(
+        "sprints/<int:sprint_pk>/backlog/user-story/new/",
+        user_story_create_for_sprint_backlog,
+        name="user_story_create_sprint",
+    ),
+    # User Story URLs
+    path(
+        "user-stories/<int:pk>/",
+        user_story_detail_view,
+        name="user_story_detail",
+    ),
+    path(
+        "user-stories/<int:pk>/edit/",
+        user_story_update_view,
+        name="user_story_update",
+    ),
+    path(
+        "user-stories/<int:pk>/delete/",
+        user_story_delete_view,
+        name="user_story_delete",
+    ),
+    path(
+        "user-stories/<int:pk>/move/",
+        user_story_move_view,
+        name="user_story_move",
+    ),
 ]

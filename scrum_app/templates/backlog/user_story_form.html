@@ -1,0 +1,170 @@
+{% extends 'base.html' %}
+
+{% block title %}{% if is_update %}Editar{% else %}Nova{% endif %} User Story - Scrum Flow{% endblock %}
+
+{% block content %}
+<div class="container mt-4">
+  <nav aria-label="breadcrumb">
+    <ol class="breadcrumb">
+      <li class="breadcrumb-item"><a href="{% url 'project_list' %}">Projetos</a></li>
+      <li class="breadcrumb-item"><a href="{% url 'project_detail' project.pk %}">{{ project.name }}</a></li>
+      {% if sprint %}
+        <li class="breadcrumb-item"><a href="{% url 'sprint_list' project.pk %}">Sprints</a></li>
+        <li class="breadcrumb-item"><a href="{% url 'sprint_detail' sprint.pk %}">{{ sprint.name }}</a></li>
+        <li class="breadcrumb-item"><a href="{% url 'sprint_backlog' sprint.pk %}">Sprint Backlog</a></li>
+      {% else %}
+        <li class="breadcrumb-item"><a href="{% url 'product_backlog' project.pk %}">Product Backlog</a></li>
+      {% endif %}
+      <li class="breadcrumb-item active" aria-current="page">
+        {% if is_update %}Editar User Story{% else %}Nova User Story{% endif %}
+      </li>
+    </ol>
+  </nav>
+
+  <div class="card shadow-sm">
+    <div class="card-header bg-primary text-white">
+      <h3 class="mb-0">
+        <i class="bi bi-{% if is_update %}pencil{% else %}plus-circle{% endif %}"></i>
+        {% if is_update %}Editar User Story{% else %}Nova User Story{% endif %}
+      </h3>
+      <small>{{ backlog_type }}</small>
+    </div>
+    <div class="card-body">
+      <form method="post" novalidate>
+        {% csrf_token %}
+
+        <div class="mb-3">
+          <label for="{{ form.title.id_for_label }}" class="form-label">
+            {{ form.title.label }} <span class="text-danger">*</span>
+          </label>
+          {{ form.title }}
+          {% if form.title.errors %}
+            <div class="text-danger">{{ form.title.errors }}</div>
+          {% endif %}
+          {% if form.title.help_text %}
+            <small class="form-text text-muted">{{ form.title.help_text }}</small>
+          {% endif %}
+        </div>
+
+        <div class="mb-3">
+          <label for="{{ form.description.id_for_label }}" class="form-label">
+            {{ form.description.label }} <span class="text-danger">*</span>
+          </label>
+          {{ form.description }}
+          {% if form.description.errors %}
+            <div class="text-danger">{{ form.description.errors }}</div>
+          {% endif %}
+          {% if form.description.help_text %}
+            <small class="form-text text-muted">{{ form.description.help_text }}</small>
+          {% endif %}
+        </div>
+
+        <hr>
+
+        <h5 class="mb-3"><i class="bi bi-journal-text"></i> Formato User Story (Opcional)</h5>
+        <p class="text-muted">
+          <small>Preencha os campos abaixo para seguir o formato padrão: "Como [tipo de usuário], eu quero [objetivo] para [benefício]"</small>
+        </p>
+
+        <div class="mb-3">
+          <label for="{{ form.as_a.id_for_label }}" class="form-label">
+            {{ form.as_a.label }}
+          </label>
+          {{ form.as_a }}
+          {% if form.as_a.errors %}
+            <div class="text-danger">{{ form.as_a.errors }}</div>
+          {% endif %}
+          {% if form.as_a.help_text %}
+            <small class="form-text text-muted">{{ form.as_a.help_text }}</small>
+          {% endif %}
+        </div>
+
+        <div class="mb-3">
+          <label for="{{ form.i_want.id_for_label }}" class="form-label">
+            {{ form.i_want.label }}
+          </label>
+          {{ form.i_want }}
+          {% if form.i_want.errors %}
+            <div class="text-danger">{{ form.i_want.errors }}</div>
+          {% endif %}
+          {% if form.i_want.help_text %}
+            <small class="form-text text-muted">{{ form.i_want.help_text }}</small>
+          {% endif %}
+        </div>
+
+        <div class="mb-3">
+          <label for="{{ form.so_that.id_for_label }}" class="form-label">
+            {{ form.so_that.label }}
+          </label>
+          {{ form.so_that }}
+          {% if form.so_that.errors %}
+            <div class="text-danger">{{ form.so_that.errors }}</div>
+          {% endif %}
+          {% if form.so_that.help_text %}
+            <small class="form-text text-muted">{{ form.so_that.help_text }}</small>
+          {% endif %}
+        </div>
+
+        <hr>
+
+        <div class="mb-3">
+          <label for="{{ form.acceptance_criteria.id_for_label }}" class="form-label">
+            {{ form.acceptance_criteria.label }}
+          </label>
+          {{ form.acceptance_criteria }}
+          {% if form.acceptance_criteria.errors %}
+            <div class="text-danger">{{ form.acceptance_criteria.errors }}</div>
+          {% endif %}
+          {% if form.acceptance_criteria.help_text %}
+            <small class="form-text text-muted">{{ form.acceptance_criteria.help_text }}</small>
+          {% endif %}
+        </div>
+
+        <div class="row">
+          <div class="col-md-4 mb-3">
+            <label for="{{ form.story_points.id_for_label }}" class="form-label">
+              {{ form.story_points.label }}
+            </label>
+            {{ form.story_points }}
+            {% if form.story_points.errors %}
+              <div class="text-danger">{{ form.story_points.errors }}</div>
+            {% endif %}
+            {% if form.story_points.help_text %}
+              <small class="form-text text-muted">{{ form.story_points.help_text }}</small>
+            {% endif %}
+          </div>
+
+          <div class="col-md-4 mb-3">
+            <label for="{{ form.priority.id_for_label }}" class="form-label">
+              {{ form.priority.label }} <span class="text-danger">*</span>
+            </label>
+            {{ form.priority }}
+            {% if form.priority.errors %}
+              <div class="text-danger">{{ form.priority.errors }}</div>
+            {% endif %}
+          </div>
+
+          <div class="col-md-4 mb-3">
+            <label for="{{ form.status.id_for_label }}" class="form-label">
+              {{ form.status.label }} <span class="text-danger">*</span>
+            </label>
+            {{ form.status }}
+            {% if form.status.errors %}
+              <div class="text-danger">{{ form.status.errors }}</div>
+            {% endif %}
+          </div>
+        </div>
+
+        <div class="d-flex justify-content-between mt-4">
+          <a href="javascript:history.back()" class="btn btn-secondary">
+            <i class="bi bi-x-circle"></i> Cancelar
+          </a>
+          <button type="submit" class="btn btn-primary">
+            <i class="bi bi-check-circle"></i> {% if is_update %}Atualizar{% else %}Criar{% endif %}
+          </button>
+        </div>
+      </form>
+    </div>
+  </div>
+</div>
+{% endblock %}

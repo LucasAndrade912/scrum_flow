@@ -1,0 +1,111 @@
+{% extends 'base.html' %}
+
+{% block title %}Mover User Story - Scrum Flow{% endblock %}
+
+{% block content %}
+<div class="container mt-4">
+  <nav aria-label="breadcrumb">
+    <ol class="breadcrumb">
+      <li class="breadcrumb-item"><a href="{% url 'project_list' %}">Projetos</a></li>
+      <li class="breadcrumb-item"><a href="{% url 'project_detail' project.pk %}">{{ project.name }}</a></li>
+      <li class="breadcrumb-item"><a href="{% url 'user_story_detail' user_story.pk %}">{{ user_story.title|truncatewords:5 }}</a></li>
+      <li class="breadcrumb-item active" aria-current="page">Mover User Story</li>
+    </ol>
+  </nav>
+
+  <div class="card shadow-sm">
+    <div class="card-header bg-info text-white">
+      <h3 class="mb-0">
+        <i class="bi bi-arrow-left-right"></i> Mover User Story
+      </h3>
+    </div>
+    <div class="card-body">
+      <div class="alert alert-info">
+        <h5><i class="bi bi-card-text"></i> {{ user_story.title }}</h5>
+        <p class="mb-0">
+          <strong>Localização atual:</strong>
+          {% if user_story.product_backlog %}
+            <span class="badge bg-primary">Product Backlog</span>
+          {% else %}
+            <span class="badge bg-success">Sprint Backlog - {{ user_story.sprint_backlog.sprint.name }}</span>
+          {% endif %}
+        </p>
+      </div>
+
+      <hr>
+
+      <form method="post" novalidate>
+        {% csrf_token %}
+
+        <div class="mb-3">
+          <label class="form-label"><strong>{{ form.move_to.label }}</strong></label>
+          {% for radio in form.move_to %}
+            <div class="form-check">
+              {{ radio.tag }}
+              <label class="form-check-label" for="{{ radio.id_for_label }}">
+                {{ radio.choice_label }}
+              </label>
+            </div>
+          {% endfor %}
+          {% if form.move_to.errors %}
+            <div class="text-danger">{{ form.move_to.errors }}</div>
+          {% endif %}
+        </div>
+
+        <div class="mb-3">
+          <label for="{{ form.sprint.id_for_label }}" class="form-label">
+            {{ form.sprint.label }}
+          </label>
+          {{ form.sprint }}
+          {% if form.sprint.errors %}
+            <div class="text-danger">{{ form.sprint.errors }}</div>
+          {% endif %}
+          {% if form.sprint.help_text %}
+            <small class="form-text text-muted">{{ form.sprint.help_text }}</small>
+          {% endif %}
+        </div>
+
+        {% if form.non_field_errors %}
+          <div class="alert alert-danger">
+            {{ form.non_field_errors }}
+          </div>
+        {% endif %}
+
+        <div class="d-flex justify-content-between mt-4">
+          <a href="{% url 'user_story_detail' user_story.pk %}" class="btn btn-secondary">
+            <i class="bi bi-x-circle"></i> Cancelar
+          </a>
+          <button type="submit" class="btn btn-primary">
+            <i class="bi bi-arrow-left-right"></i> Mover User Story
+          </button>
+        </div>
+      </form>
+    </div>
+  </div>
+</div>
+
+<script>
+  // Show/hide sprint selector based on selected option
+  document.addEventListener('DOMContentLoaded', function() {
+    const radioButtons = document.querySelectorAll('input[name="move_to"]');
+    const sprintSelect = document.getElementById('{{ form.sprint.id_for_label }}');
+    const sprintGroup = sprintSelect.closest('.mb-3');
+
+    function toggleSprintSelect() {
+      const selectedValue = document.querySelector('input[name="move_to"]:checked').value;
+      if (selectedValue === 'sprint') {
+        sprintGroup.style.display = 'block';
+      } else {
+        sprintGroup.style.display = 'none';
+      }
+    }
+
+    radioButtons.forEach(radio => {
+      radio.addEventListener('change', toggleSprintSelect);
+    });
+
+    // Initial state
+    toggleSprintSelect();
+  });
+</script>
+{% endblock %}

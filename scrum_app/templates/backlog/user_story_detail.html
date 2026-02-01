@@ -1,0 +1,138 @@
+{% extends 'base.html' %}
+
+{% block title %}{{ user_story.title }} - Scrum Flow{% endblock %}
+
+{% block content %}
+<div class="container mt-4">
+  <nav aria-label="breadcrumb">
+    <ol class="breadcrumb">
+      <li class="breadcrumb-item"><a href="{% url 'project_list' %}">Projetos</a></li>
+      <li class="breadcrumb-item"><a href="{% url 'project_detail' project.pk %}">{{ project.name }}</a></li>
+      {% if user_story.product_backlog %}
+        <li class="breadcrumb-item"><a href="{% url 'product_backlog' project.pk %}">Product Backlog</a></li>
+      {% else %}
+        <li class="breadcrumb-item"><a href="{% url 'sprint_list' project.pk %}">Sprints</a></li>
+        <li class="breadcrumb-item"><a href="{% url 'sprint_detail' user_story.sprint_backlog.sprint.pk %}">{{ user_story.sprint_backlog.sprint.name }}</a></li>
+        <li class="breadcrumb-item"><a href="{% url 'sprint_backlog' user_story.sprint_backlog.sprint.pk %}">Sprint Backlog</a></li>
+      {% endif %}
+      <li class="breadcrumb-item active" aria-current="page">{{ user_story.title|truncatewords:5 }}</li>
+    </ol>
+  </nav>
+
+  <div class="card shadow-sm">
+    <div class="card-header bg-primary text-white">
+      <div class="d-flex justify-content-between align-items-center">
+        <h3 class="mb-0">
+          <i class="bi bi-card-text"></i> {{ user_story.title }}
+        </h3>
+        <div>
+          <a href="{% url 'user_story_update' user_story.pk %}" class="btn btn-light btn-sm">
+            <i class="bi bi-pencil"></i> Editar
+          </a>
+          <a href="{% url 'user_story_move' user_story.pk %}" class="btn btn-info btn-sm">
+            <i class="bi bi-arrow-left-right"></i> Mover
+          </a>
+          <a href="{% url 'user_story_delete' user_story.pk %}" class="btn btn-danger btn-sm">
+            <i class="bi bi-trash"></i> Excluir
+          </a>
+        </div>
+      </div>
+    </div>
+    <div class="card-body">
+      <div class="row mb-3">
+        <div class="col-md-6">
+          <p class="mb-2">
+            <strong><i class="bi bi-list-task"></i> Backlog:</strong>
+            {% if user_story.product_backlog %}
+              <span class="badge bg-primary">Product Backlog</span>
+            {% else %}
+              <span class="badge bg-success">Sprint Backlog - {{ user_story.sprint_backlog.sprint.name }}</span>
+            {% endif %}
+          </p>
+          <p class="mb-2">
+            <strong><i class="bi bi-flag"></i> Prioridade:</strong>
+            {% if user_story.priority == 'CRITICAL' %}
+              <span class="badge bg-danger">{{ user_story.get_priority_display }}</span>
+            {% elif user_story.priority == 'HIGH' %}
+              <span class="badge bg-warning text-dark">{{ user_story.get_priority_display }}</span>
+            {% elif user_story.priority == 'MEDIUM' %}
+              <span class="badge bg-info">{{ user_story.get_priority_display }}</span>
+            {% else %}
+              <span class="badge bg-secondary">{{ user_story.get_priority_display }}</span>
+            {% endif %}
+          </p>
+        </div>
+        <div class="col-md-6">
+          <p class="mb-2">
+            <strong><i class="bi bi-check-circle"></i> Status:</strong>
+            {% if user_story.status == 'DONE' %}
+              <span class="badge bg-success">{{ user_story.get_status_display }}</span>
+            {% elif user_story.status == 'IN_PROGRESS' %}
+              <span class="badge bg-primary">{{ user_story.get_status_display }}</span>
+            {% else %}
+              <span class="badge bg-secondary">{{ user_story.get_status_display }}</span>
+            {% endif %}
+          </p>
+          <p class="mb-2">
+            <strong><i class="bi bi-graph-up"></i> Story Points:</strong>
+            {% if user_story.story_points %}
+              <span class="badge bg-dark">{{ user_story.story_points }}</span>
+            {% else %}
+              <span class="text-muted">Não estimado</span>
+            {% endif %}
+          </p>
+        </div>
+      </div>
+
+      <div class="row mb-3">
+        <div class="col-md-6">
+          <p class="mb-0">
+            <strong><i class="bi bi-calendar-plus"></i> Criada em:</strong>
+            {{ user_story.created_at|date:"d/m/Y às H:i" }}
+          </p>
+        </div>
+        <div class="col-md-6">
+          <p class="mb-0">
+            <strong><i class="bi bi-calendar-check"></i> Última atualização:</strong>
+            {{ user_story.updated_at|date:"d/m/Y às H:i" }}
+          </p>
+        </div>
+      </div>
+
+      <hr>
+
+      <h5><i class="bi bi-file-text"></i> Descrição</h5>
+      <p class="text-muted">{{ user_story.description|linebreaks }}</p>
+
+      {% if user_story.as_a or user_story.i_want or user_story.so_that %}
+        <hr>
+        <h5><i class="bi bi-journal-text"></i> User Story</h5>
+        <div class="alert alert-light border">
+          {% if user_story.as_a %}
+            <p class="mb-1"><strong>Como:</strong> {{ user_story.as_a }}</p>
+          {% endif %}
+          {% if user_story.i_want %}
+            <p class="mb-1"><strong>Eu quero:</strong> {{ user_story.i_want }}</p>
+          {% endif %}
+          {% if user_story.so_that %}
+            <p class="mb-0"><strong>Para que:</strong> {{ user_story.so_that }}</p>
+          {% endif %}
+        </div>
+      {% endif %}
+
+      {% if user_story.acceptance_criteria %}
+        <hr>
+        <h5><i class="bi bi-clipboard-check"></i> Critérios de Aceitação</h5>
+        <div class="alert alert-info">
+          {{ user_story.acceptance_criteria|linebreaks }}
+        </div>
+      {% endif %}
+    </div>
+    <div class="card-footer">
+      <a href="javascript:history.back()" class="btn btn-secondary">
+        <i class="bi bi-arrow-left"></i> Voltar
+      </a>
+    </div>
+  </div>
+</div>
+{% endblock %}

@@ -128,3 +128,168 @@ class Sprint(models.Model):
                 raise ValidationError(
                     {"status": "Já existe uma Sprint ativa neste projeto."}
                 )
+
+
+class ProductBacklog(models.Model):
+    """Model representing a product backlog for a project."""
+
+    project = models.OneToOneField(
+        Project,
+        on_delete=models.CASCADE,
+        related_name="product_backlog",
+        verbose_name="Projeto",
+    )
+    created_at = models.DateTimeField(auto_now_add=True, verbose_name="Data de criação")
+
+    objects: models.Manager["ProductBacklog"]
+
+    class Meta:
+        verbose_name = "Product Backlog"
+        verbose_name_plural = "Product Backlogs"
+
+    def __str__(self) -> str:
+        return f"Product Backlog - {self.project.name}"
+
+
+class SprintBacklog(models.Model):
+    """Model representing a sprint backlog for a sprint."""
+
+    sprint = models.OneToOneField(
+        Sprint,
+        on_delete=models.CASCADE,
+        related_name="sprint_backlog",
+        verbose_name="Sprint",
+    )
+    created_at = models.DateTimeField(auto_now_add=True, verbose_name="Data de criação")
+
+    objects: models.Manager["SprintBacklog"]
+
+    class Meta:
+        verbose_name = "Sprint Backlog"
+        verbose_name_plural = "Sprint Backlogs"
+
+    def __str__(self) -> str:
+        return f"Sprint Backlog - {self.sprint.name}"
+
+
+class UserStory(models.Model):
+    """Model representing a user story in the Scrum Flow application."""
+
+    class Priority(models.TextChoices):
+        LOW = "LOW", "Baixa"
+        MEDIUM = "MEDIUM", "Média"
+        HIGH = "HIGH", "Alta"
+        CRITICAL = "CRITICAL", "Crítica"
+
+    class Status(models.TextChoices):
+        TODO = "TODO", "A Fazer"
+        IN_PROGRESS = "IN_PROGRESS", "Em Progresso"
+        DONE = "DONE", "Concluído"
+
+    title = models.CharField(max_length=200, verbose_name="Título")
+    description = models.TextField(verbose_name="Descrição")
+    
+    # User story format: "Como [tipo de usuário], eu quero [objetivo] para [benefício]"
+    as_a = models.CharField(
+        max_length=200,
+        verbose_name="Como (tipo de usuário)",
+        help_text="Ex: Como usuário do sistema",
+        blank=True,
+    )
+    i_want = models.CharField(
+        max_length=200,
+        verbose_name="Eu quero",
+        help_text="Ex: Eu quero fazer login",
+        blank=True,
+    )
+    so_that = models.CharField(
+        max_length=200,
+        verbose_name="Para que",
+        help_text="Ex: Para que eu possa acessar o sistema",
+        blank=True,
+    )
+
+    acceptance_criteria = models.TextField(
+        verbose_name="Critérios de Aceitação",
+        blank=True,
+        help_text="Critérios para considerar esta história como concluída",
+    )
+
+    story_points = models.IntegerField(
+        verbose_name="Story Points",
+        null=True,
+        blank=True,
+        help_text="Estimativa de esforço (Fibonacci: 1, 2, 3, 5, 8, 13...)",
+    )
+
+    priority = models.CharField(
+        max_length=10,
+        choices=Priority.choices,
+        default=Priority.MEDIUM,
+        verbose_name="Prioridade",
+    )
+
+    status = models.CharField(
+        max_length=15,
+        choices=Status.choices,
+        default=Status.TODO,
+        verbose_name="Status",
+    )
+
+    product_backlog = models.ForeignKey(
+        ProductBacklog,
+        on_delete=models.CASCADE,
+        related_name="user_stories",
+        verbose_name="Product Backlog",
+        null=True,
+        blank=True,
+    )
+
+    sprint_backlog = models.ForeignKey(
+        SprintBacklog,
+        on_delete=models.CASCADE,
+        related_name="user_stories",
+        verbose_name="Sprint Backlog",
+        null=True,
+        blank=True,
+    )
+
+    created_at = models.DateTimeField(auto_now_add=True, verbose_name="Data de criação")
+    updated_at = models.DateTimeField(auto_now=True, verbose_name="Última atualização")
+
+    objects: models.Manager["UserStory"]
+
+    class Meta:
+        verbose_name = "User Story"
+        verbose_name_plural = "User Stories"
+        ordering = ["-priority", "-created_at"]
+
+    def __str__(self) -> str:
+        return str(self.title)
+
+    def clean(self):
+        # Uma user story deve estar em apenas um backlog
+        if self.product_backlog and self.sprint_backlog:
+            raise ValidationError(
+                "Uma User Story não pode estar em Product Backlog e Sprint Backlog simultaneamente."
+            )
+        
+        # Uma user story deve estar em pelo menos um backlog
+        if not self.product_backlog and not self.sprint_backlog:
+            raise ValidationError(
+                "Uma User Story deve estar associada a um Product Backlog ou Sprint Backlog."
+            )
+
+    def move_to_sprint(self, sprint):
+        """Move user story from product backlog to sprint backlog."""
+        sprint_backlog, _ = SprintBacklog.objects.get_or_create(sprint=sprint)
+        self.product_backlog = None
+        self.sprint_backlog = sprint_backlog
+        self.save()
+
+    def move_to_product_backlog(self, project):
+        """Move user story from sprint backlog to product backlog."""
+        product_backlog, _ = ProductBacklog.objects.get_or_create(project=project)
+        self.sprint_backlog = None
+        self.product_backlog = product_backlog
+        self.save()
