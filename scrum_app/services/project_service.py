@@ -1,6 +1,7 @@
 """Project-related business logic."""
 
 from django.db import transaction
+from django.db.models import Q
 
 from ..models import Project
 
@@ -11,24 +12,27 @@ class ProjectService:
     @staticmethod
     def get_user_projects(user):
         """
-        Get all projects owned by a user.
+        Get all projects where the user is owner OR a project member.
 
         Args:
             user: User instance
 
         Returns:
-            QuerySet: Projects owned by the user
+            QuerySet: Projects visible to the user
         """
-        return Project.objects.filter(owner=user)
+        return (
+            Project.objects.filter(Q(owner=user) | Q(members__user=user))
+            .distinct()
+            .order_by("-created_at")
+        )
 
     @staticmethod
-    def get_project_by_id(project_id, owner):
+    def get_project_by_id(project_id):
         """
-        Get a project by ID and owner.
+        Get a project by ID (authorization must be handled in the view).
 
         Args:
             project_id: Project primary key
-            owner: User instance (project owner)
 
         Returns:
             Project: The project instance
@@ -36,7 +40,7 @@ class ProjectService:
         Raises:
             Project.DoesNotExist: If project not found
         """
-        return Project.objects.get(pk=project_id, owner=owner)
+        return Project.objects.get(pk=project_id)
 
     @staticmethod
     @transaction.atomic
@@ -76,6 +80,8 @@ class ProjectService:
         """
         Delete a project.
 
+        NOTE: Authorization should be enforced in the view (owner-only).
+
         Args:
             project: Project instance to delete
 
@@ -89,7 +95,7 @@ class ProjectService:
     @staticmethod
     def check_project_access(project, user):
         """
-        Check if user has access to view project members.
+        Check if user has access to a project (owner OR member).
 
         Args:
             project: Project instance
@@ -98,4 +104,5 @@ class ProjectService:
         Returns:
             bool: True if user is owner or member, False otherwise
         """
-        return project.is_member(user) or project.is_owner(user)
+        # is_member already returns True for owner in your model implementation
+        return project.is_member(user)

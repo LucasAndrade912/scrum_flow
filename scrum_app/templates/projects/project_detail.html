@@ -18,34 +18,39 @@ Flow{%endblock %} {% block content %}
         <h3 class="mb-0">
           <i class="bi bi-folder-fill"></i> {{ project.name }}
         </h3>
+
         <div>
+          {% if perms.scrum_app.change_project %}
           <a
             href="{% url 'project_update' project.pk %}"
             class="btn btn-light btn-sm"
           >
             <i class="bi bi-pencil"></i> Editar
           </a>
+          {% endif %} {% if perms.scrum_app.delete_project %}
           <a
             href="{% url 'project_delete' project.pk %}"
             class="btn btn-danger btn-sm"
           >
             <i class="bi bi-trash"></i> Excluir
           </a>
+          {% endif %}
         </div>
       </div>
     </div>
+
     <div class="card-body">
       <div class="row mb-3">
         <div class="col-md-6">
           <p>
             <strong><i class="bi bi-person"></i> Proprietário:</strong>
-            {{project.owner.username }}
+            {{ project.owner.username }}
           </p>
         </div>
         <div class="col-md-6">
           <p>
             <strong><i class="bi bi-calendar"></i> Criado em:</strong>
-            {{project.created_at|date:"d/m/Y às H:i" }}
+            {{ project.created_at|date:"d/m/Y às H:i" }}
           </p>
         </div>
       </div>
@@ -122,6 +127,7 @@ Flow{%endblock %} {% block content %}
 
       <hr />
     </div>
+
     <div class="card-footer">
       <a href="{% url 'project_list' %}" class="btn btn-secondary">
         <i class="bi bi-arrow-left"></i> Voltar para Projetos

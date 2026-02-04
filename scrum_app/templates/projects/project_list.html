@@ -1,105 +1,107 @@
-{% extends 'base.html' %}
-
-{% block title %}Meus Projetos - Scrum Flow{% endblock %}
-
-{% block content %}
+{% extends 'base.html' %} {% block title %}Meus Projetos - Scrum Flow
+{%endblock%} {% block content %}
 <div class="container mt-4">
-    <div class="d-flex justify-content-between align-items-center mb-4">
-        <h2>
-            <i class="bi bi-folder"></i> Meus Projetos
-        </h2>
-        <a href="{% url 'project_create' %}" class="btn btn-primary">
-            <i class="bi bi-plus-circle"></i> Novo Projeto
-        </a>
-    </div>
+  <div class="d-flex justify-content-between align-items-center mb-4">
+    <h2><i class="bi bi-folder"></i> Meus Projetos</h2>
 
-    {% if page_obj %}
-        <div class="row">
-            {% for project in page_obj %}
-                <div class="col-md-6 col-lg-4 mb-4">
-                    <div class="card h-100 shadow-sm">
-                        <div class="card-body">
-                            <h5 class="card-title">
-                                <i class="bi bi-folder-fill text-primary"></i> 
-                                {{ project.name }}
-                            </h5>
-                            <p class="card-text text-muted">
-                                {% if project.description %}
-                                    {{ project.description|truncatewords:20 }}
-                                {% else %}
-                                    <em>Sem descrição</em>
-                                {% endif %}
-                            </p>
-                            <p class="card-text">
-                                <small class="text-muted">
-                                    <i class="bi bi-calendar"></i> 
-                                    Criado em {{ project.created_at|date:"d/m/Y" }}
-                                </small>
-                            </p>
-                        </div>
-                        <div class="card-footer bg-white border-top-0">
-                            <div class="d-flex justify-content-between">
-                                <a href="{% url 'project_detail' project.pk %}" class="btn btn-sm btn-outline-primary">
-                                    <i class="bi bi-eye"></i> Ver
-                                </a>
-                                <div>
-                                    <a href="{% url 'project_update' project.pk %}" class="btn btn-sm btn-outline-secondary">
-                                        <i class="bi bi-pencil"></i> Editar
-                                    </a>
-                                    <a href="{% url 'project_delete' project.pk %}" class="btn btn-sm btn-outline-danger">
-                                        <i class="bi bi-trash"></i> Excluir
-                                    </a>
-                                </div>
-                            </div>
-                        </div>
-                    </div>
-                </div>
-            {% endfor %}
-        </div>
-
-        <!-- Pagination -->
-        {% if page_obj.has_other_pages %}
-        <nav aria-label="Navegação de projetos">
-            <ul class="pagination justify-content-center">
-                {% if page_obj.has_previous %}
-                <li class="page-item">
-                    <a class="page-link" href="?page=1">
-                        <i class="bi bi-chevron-double-left"></i>
-                    </a>
-                </li>
-                <li class="page-item">
-                    <a class="page-link" href="?page={{ page_obj.previous_page_number }}">
-                        <i class="bi bi-chevron-left"></i>
-                    </a>
-                </li>
-                {% endif %}
-
-                <li class="page-item active">
-                    <span class="page-link">
-                        Página {{ page_obj.number }} de {{ page_obj.paginator.num_pages }}
-                    </span>
-                </li>
-
-                {% if page_obj.has_next %}
-                <li class="page-item">
-                    <a class="page-link" href="?page={{ page_obj.next_page_number }}">
-                        <i class="bi bi-chevron-right"></i>
-                    </a>
-                </li>
-                <li class="page-item">
-                    <a class="page-link" href="?page={{ page_obj.paginator.num_pages }}">
-                        <i class="bi bi-chevron-double-right"></i>
-                    </a>
-                </li>
-                {% endif %}
-            </ul>
-        </nav>
-        {% endif %}
-    {% else %}
-        <div class="alert alert-info" role="alert">
-            <i class="bi bi-info-circle"></i>
-            Você ainda não criou nenhum projeto. Clique em "Novo Projeto" para começar!
-        </div>
+    {% if perms.scrum_app.add_project %}
+    <a href="{% url 'project_create' %}" class="btn btn-primary">
+      <i class="bi bi-plus-circle"></i> Novo Projeto
+    </a>
     {% endif %}
+  </div>
+
+  {% if page_obj %}
+  <div class="row">
+    {% for project in page_obj %}
+    <div class="col-md-6 col-lg-4 mb-4">
+      <div class="card h-100 shadow-sm">
+        <div class="card-body">
+          <h5 class="card-title">
+            <i class="bi bi-folder-fill text-primary"></i>
+            {{ project.name }}
+          </h5>
+
+          <p class="card-text text-muted">
+            {% if project.description %} {{ project.description|truncatewords:20
+            }} {% else %}
+            <em>Sem descrição</em>
+            {% endif %}
+          </p>
+
+          <p class="card-text">
+            <small class="text-muted">
+              <i class="bi bi-calendar"></i>
+              Criado em {{ project.created_at|date:"d/m/Y" }}
+            </small>
+          </p>
+        </div>
+
+        <div class="card-footer bg-white border-top-0">
+          <div class="d-flex justify-content-between">
+            <a
+              href="{% url 'project_detail' project.pk %}"
+              class="btn btn-sm btn-outline-primary"
+            >
+              <i class="bi bi-eye"></i> Ver
+            </a>
+
+            <div>
+              {% if perms.scrum_app.change_project %}
+              <a
+                href="{% url 'project_update' project.pk %}"
+                class="btn btn-sm btn-outline-secondary"
+              >
+                <i class="bi bi-pencil"></i> Editar
+              </a>
+              {% endif %} {% if perms.scrum_app.delete_project %}
+              <a
+                href="{% url 'project_delete' project.pk %}"
+                class="btn btn-sm btn-outline-danger"
+              >
+                <i class="bi bi-trash"></i> Excluir
+              </a>
+              {% endif %}
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+    {% endfor %}
+  </div>
+
+  {% if page_obj.has_other_pages %}
+  <nav aria-label="Navegação de projetos">
+    <ul class="pagination justify-content-center">
+      {% if page_obj.has_previous %}
+      <li class="page-item">
+        <a class="page-link" href="?page={{ page_obj.previous_page_number }}">
+          &laquo;
+        </a>
+      </li>
+      {% endif %}
+
+      <li class="page-item active">
+        <span class="page-link">
+          Página {{ page_obj.number }} de {{ page_obj.paginator.num_pages }}
+        </span>
+      </li>
+
+      {% if page_obj.has_next %}
+      <li class="page-item">
+        <a class="page-link" href="?page={{ page_obj.next_page_number }}">
+          &raquo;
+        </a>
+      </li>
+      {% endif %}
+    </ul>
+  </nav>
+  {% endif %} {% else %}
+  <div class="alert alert-info">
+    <i class="bi bi-info-circle"></i>
+    {% if perms.scrum_app.add_project %} Você ainda não criou nenhum projeto. {%
+    else %} Você ainda não participa de nenhum projeto. {% endif %}
+  </div>
+  {% endif %}
 </div>
 {% endblock %}

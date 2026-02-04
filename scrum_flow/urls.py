@@ -1,19 +1,21 @@
 # pylint: disable=missing-module-docstring
+
 from django.contrib import admin
 from django.contrib.auth import views as auth_views
 from django.urls import path
 
-from scrum_app.views import (
-    home_view,
-    project_add_member_view,
+from scrum_app.views.auth import home_view, register_view
+from scrum_app.views.project import (
     project_create_view,
     project_delete_view,
     project_detail_view,
     project_list_view,
+    project_update_view,
+)
+from scrum_app.views.project_member import (
+    project_add_member_view,
     project_members_view,
     project_remove_member_view,
-    project_update_view,
-    register_view,
 )
 from scrum_app.views.sprint import (
     sprint_close_view,
@@ -66,7 +68,7 @@ urlpatterns = [
         project_remove_member_view,
         name="project_remove_member",
     ),
-    # Sprints
+    # Sprint URLs
     path(
         "projects/<int:project_id>/sprints/",
         sprint_list_view,
