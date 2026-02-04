@@ -10,7 +10,7 @@ from ..services import UserService
 
 
 def register_view(request):
-    """View para registro de novos usuários."""
+    """Register new users and ensure they join the global 'member' group."""
     if request.user.is_authenticated:
         return redirect("home")
 
@@ -19,7 +19,7 @@ def register_view(request):
         if form.is_valid():
             user = UserService.register_user(form, request)
 
-            # Add every new user to the global 'member' group
+            # Every new user becomes a global 'member' (view permissions)
             try:
                 member_group = Group.objects.get(name="member")
                 user.groups.add(member_group)
@@ -34,8 +34,8 @@ def register_view(request):
                 f"Bem-vindo(a), {user.username}! Sua conta foi criada com sucesso.",
             )
             return redirect("home")
-        else:
-            messages.error(request, "Por favor, corrija os erros abaixo.")
+
+        messages.error(request, "Por favor, corrija os erros abaixo.")
     else:
         form = CustomUserCreationForm()
 
@@ -44,5 +44,5 @@ def register_view(request):
 
 @login_required
 def home_view(request):
-    """View da página inicial."""
+    """Home page (requires authentication)."""
     return render(request, "home.html")
