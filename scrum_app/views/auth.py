@@ -2,7 +2,6 @@
 
 from django.contrib import messages
 from django.contrib.auth.decorators import login_required
-from django.contrib.auth.models import Group
 from django.shortcuts import redirect, render
 
 from ..forms import CustomUserCreationForm
@@ -10,7 +9,7 @@ from ..services import UserService
 
 
 def register_view(request):
-    """Register new users and ensure they join the global 'member' group."""
+    """Register new users with automatic permissions."""
     if request.user.is_authenticated:
         return redirect("home")
 
@@ -18,16 +17,6 @@ def register_view(request):
         form = CustomUserCreationForm(request.POST)
         if form.is_valid():
             user = UserService.register_user(form, request)
-
-            # Every new user becomes a global 'member' (view permissions)
-            try:
-                member_group = Group.objects.get(name="member")
-                user.groups.add(member_group)
-            except Group.DoesNotExist:
-                messages.warning(
-                    request,
-                    "Conta criada, mas o grupo 'member' não foi encontrado no sistema.",
-                )
 
             messages.success(
                 request,

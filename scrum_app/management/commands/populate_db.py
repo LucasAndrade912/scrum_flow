@@ -4,7 +4,8 @@ Django management command to populate database with fake data for testing.
 
 from datetime import timedelta
 
-from django.contrib.auth.models import User
+from django.contrib.auth.models import Permission, User
+from django.contrib.contenttypes.models import ContentType
 from django.core.management.base import BaseCommand
 from django.utils import timezone
 from faker import Faker
@@ -65,6 +66,11 @@ class Command(BaseCommand):
         parser.add_argument(
             "--clear", action="store_true", help="Clear existing data before populating"
         )
+        parser.add_argument(
+            "--full-permissions",
+            action="store_true",
+            help="Grant all permissions to created users (default: only view and add)",
+        )
 
     def handle(self, *args, **options):
         fake = Faker("pt_BR")
@@ -106,6 +112,38 @@ class Command(BaseCommand):
             )
             users.append(user)
             self.stdout.write(f"  ✓ Created user: {user.username}")
+
+        # Grant permissions to all created users
+        self.stdout.write("\nGranting permissions to users...")
+        models = [Project, ProjectMember, Sprint, UserStory, Task]
+        permissions = []
+
+        for model in models:
+            content_type = ContentType.objects.get_for_model(model)
+
+            if options["full_permissions"]:
+                # Grant all permissions (view, add, change, delete)
+                model_permissions = Permission.objects.filter(content_type=content_type)
+            else:
+                # Grant only basic permissions (view, add)
+                model_permissions = Permission.objects.filter(
+                    content_type=content_type,
+                    codename__in=[
+                        f"view_{model._meta.model_name}",
+                        f"add_{model._meta.model_name}",
+                    ],
+                )
+            permissions.extend(model_permissions)
+
+        for user in users:
+            user.user_permissions.add(*permissions)
+
+        perm_type = "all" if options["full_permissions"] else "basic (view/add)"
+        self.stdout.write(
+            self.style.SUCCESS(
+                f"  ✓ Granted {perm_type} permissions ({len(permissions)} total) to {len(users)} test users"
+            )
+        )
 
         # Create projects
         self.stdout.write(f"\nCreating {num_projects} projects per user...")
