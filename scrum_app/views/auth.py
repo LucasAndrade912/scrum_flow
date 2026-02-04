@@ -2,6 +2,7 @@
 
 from django.contrib import messages
 from django.contrib.auth.decorators import login_required
+from django.contrib.auth.models import Group
 from django.shortcuts import redirect, render
 
 from ..forms import CustomUserCreationForm
@@ -17,6 +18,17 @@ def register_view(request):
         form = CustomUserCreationForm(request.POST)
         if form.is_valid():
             user = UserService.register_user(form, request)
+
+            # Add every new user to the global 'member' group
+            try:
+                member_group = Group.objects.get(name="member")
+                user.groups.add(member_group)
+            except Group.DoesNotExist:
+                messages.warning(
+                    request,
+                    "Conta criada, mas o grupo 'member' não foi encontrado no sistema.",
+                )
+
             messages.success(
                 request,
                 f"Bem-vindo(a), {user.username}! Sua conta foi criada com sucesso.",

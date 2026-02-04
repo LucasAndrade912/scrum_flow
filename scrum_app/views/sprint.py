@@ -1,58 +1,75 @@
-from django import forms
-from django.contrib import messages
-from django.contrib.auth import login
-from django.contrib.auth.decorators import login_required
-from django.contrib.auth.forms import UserCreationForm
 from django.core.paginator import Paginator
+from django.contrib.auth.decorators import login_required, permission_required
+from django.core.exceptions import PermissionDenied
 from django.shortcuts import get_object_or_404, redirect, render
-from django.http import Http404
 
-
-
-from ..forms.sprint_forms import  SprintForm
+from ..forms.sprint_forms import SprintForm
 from ..models import Project, Sprint
 
 
-
-# Sprint
+# Helpers
 
 def _get_project_or_404(project_id, user):
     project = get_object_or_404(Project, id=project_id)
     if not project.is_member(user):
-        raise Http404("Projeto não encontrado.")  # “esconde” para não-membros
+        raise PermissionDenied
     return project
 
 
 def _get_sprint_or_404(sprint_id, user):
     sprint = get_object_or_404(Sprint, id=sprint_id)
     if not sprint.project.is_member(user):
-        raise Http404("Sprint não encontrada.")
+        raise PermissionDenied
     return sprint
 
 
+def _require_project_editor(project: Project, user) -> None:
+    """Allow management within a project: superuser, owner, or group 'editor' (must be member)."""
+    if user.is_superuser:
+        return
+    if project.is_owner(user):
+        return
+    if user.groups.filter(name="editor").exists():
+        return
+    raise PermissionDenied
+
+
+# Sprint views
+
 @login_required
+@permission_required("scrum_app.view_sprint", raise_exception=True)
 def sprint_list_view(request, project_id):
     project = _get_project_or_404(project_id, request.user)
 
     qs = project.sprints.all().order_by("-start_date", "-created_at")
-
-    paginator = Paginator(qs, 10)  # page size
+    paginator = Paginator(qs, 10)
     page_number = request.GET.get("page")
     page_obj = paginator.get_page(page_number)
+
+    can_manage = (
+        request.user.is_superuser
+        or project.is_owner(request.user)
+        or request.user.groups.filter(name="editor").exists()
+    )
 
     return render(
         request,
         "sprints/sprint_list.html",
-        {"project": project, "page_obj": page_obj},
+        {"project": project, "page_obj": page_obj, "can_manage": can_manage},
     )
 
 
 @login_required
+@permission_required("scrum_app.view_sprint", raise_exception=True)
 def sprint_detail_view(request, sprint_id):
     sprint = _get_sprint_or_404(sprint_id, request.user)
     project = sprint.project
 
-    can_manage = project.is_owner(request.user)
+    can_manage = (
+        request.user.is_superuser
+        or project.is_owner(request.user)
+        or request.user.groups.filter(name="editor").exists()
+    )
 
     return render(
         request,
@@ -62,11 +79,10 @@ def sprint_detail_view(request, sprint_id):
 
 
 @login_required
+@permission_required("scrum_app.add_sprint", raise_exception=True)
 def sprint_create_view(request, project_id):
     project = _get_project_or_404(project_id, request.user)
-
-    if not project.is_owner(request.user):
-        raise Http404("Você não tem permissão.")
+    _require_project_editor(project, request.user)
 
     if request.method == "POST":
         form = SprintForm(request.POST)
@@ -82,17 +98,22 @@ def sprint_create_view(request, project_id):
     return render(
         request,
         "sprints/sprint_form.html",
-        {"project": project, "form": form, "mode": "create", "title": "Nova Sprint", "button_text":"Criar"},
+        {
+            "project": project,
+            "form": form,
+            "mode": "create",
+            "title": "Nova Sprint",
+            "button_text": "Criar",
+        },
     )
 
 
 @login_required
+@permission_required("scrum_app.change_sprint", raise_exception=True)
 def sprint_update_view(request, sprint_id):
     sprint = _get_sprint_or_404(sprint_id, request.user)
     project = sprint.project
-
-    if not project.is_owner(request.user):
-        raise Http404("Você não tem permissão.")
+    _require_project_editor(project, request.user)
 
     if request.method == "POST":
         form = SprintForm(request.POST, instance=sprint)
@@ -107,23 +128,27 @@ def sprint_update_view(request, sprint_id):
     return render(
         request,
         "sprints/sprint_form.html",
-        {"project": project, "form": form, "mode": "edit", "sprint": sprint, "title":"Editar Sprint", "button_text":"Editar" },
+        {
+            "project": project,
+            "form": form,
+            "mode": "edit",
+            "sprint": sprint,
+            "title": "Editar Sprint",
+            "button_text": "Editar",
+        },
     )
 
 
 @login_required
+@permission_required("scrum_app.change_sprint", raise_exception=True)
 def sprint_close_view(request, sprint_id):
     sprint = _get_sprint_or_404(sprint_id, request.user)
     project = sprint.project
-
-    if not project.is_owner(request.user):
-        raise Http404("Você não tem permissão.")
+    _require_project_editor(project, request.user)
 
     if request.method == "POST":
         sprint.status = Sprint.Status.CLOSED
         sprint.full_clean()
         sprint.save()
-        return redirect("sprint_detail", sprint_id=sprint.id)
 
     return redirect("sprint_detail", sprint_id=sprint.id)
-
