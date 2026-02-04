@@ -18,11 +18,12 @@ def _require_project_member(project: Project, user) -> None:
 
 
 def _require_project_editor(project: Project, user) -> None:
-    """Ensure user can manage (edit) within this project.
+    """Ensure user can manage the project.
 
-    Rule:
-    - Owner is always allowed
-    - Users in Django group 'editor' are allowed (but still must be a project member)
+    Allowed:
+    - Owner
+    - User in global Django group 'editor'
+    (But must still be a project member; checked separately)
     """
     if project.is_owner(user):
         return
@@ -34,7 +35,7 @@ def _require_project_editor(project: Project, user) -> None:
 @login_required
 @permission_required("scrum_app.view_project", raise_exception=True)
 def project_list_view(request):
-    """List projects where the current user is owner or member."""
+    """List projects where the current user is owner OR member."""
     projects = ProjectService.get_user_projects(request.user)
 
     paginator = Paginator(projects, 10)
@@ -47,7 +48,7 @@ def project_list_view(request):
 @login_required
 @permission_required("scrum_app.view_project", raise_exception=True)
 def project_detail_view(request, pk):
-    """Display project details."""
+    """Display project details. Requires membership."""
     project = get_object_or_404(Project, pk=pk)
     _require_project_member(project, request.user)
 
@@ -65,7 +66,7 @@ def project_detail_view(request, pk):
 @login_required
 @permission_required("scrum_app.add_project", raise_exception=True)
 def project_create_view(request):
-    """Create a new project. Allowed: editors (and superuser)."""
+    """Create a new project. Only users with add_project (editors) can create."""
     if request.method == "POST":
         form = ProjectForm(request.POST)
         if form.is_valid():
@@ -85,7 +86,7 @@ def project_create_view(request):
 @login_required
 @permission_required("scrum_app.change_project", raise_exception=True)
 def project_update_view(request, pk):
-    """Update an existing project. Allowed: owner or editor (if member)."""
+    """Update a project. Allowed: owner or editor (must be member)."""
     project = get_object_or_404(Project, pk=pk)
     _require_project_member(project, request.user)
     _require_project_editor(project, request.user)
@@ -94,7 +95,9 @@ def project_update_view(request, pk):
         form = ProjectForm(request.POST, instance=project)
         if form.is_valid():
             ProjectService.update_project(form)
-            messages.success(request, f'Projeto "{project.name}" atualizado com sucesso!')
+            messages.success(
+                request, f'Projeto "{project.name}" atualizado com sucesso!'
+            )
             return redirect("project_detail", pk=project.pk)
     else:
         form = ProjectForm(instance=project)
@@ -112,12 +115,12 @@ def project_update_view(request, pk):
 
 
 @login_required
+@permission_required("scrum_app.delete_project", raise_exception=True)
 def project_delete_view(request, pk):
-    """Delete a project. Allowed: owner (and superuser)."""
+    """Delete a project. Allowed: owner or editor (must be member)."""
     project = get_object_or_404(Project, pk=pk)
-
-    if not (project.is_owner(request.user) or request.user.is_superuser):
-        raise PermissionDenied
+    _require_project_member(project, request.user)
+    _require_project_editor(project, request.user)
 
     if request.method == "POST":
         project_name = ProjectService.delete_project(project)
