@@ -33,9 +33,10 @@
           </h5>
 
           <p class="card-text text-muted">
-            {% if sprint.description %} {{ sprint.description|truncatewords:20
-            }} {% else %}
-            <em>Sem descrição</em>
+            {% if sprint.description %}
+              {{ sprint.description|truncatewords:20 }}
+            {% else %}
+              <em>Sem descrição</em>
             {% endif %}
           </p>
 
@@ -62,7 +63,7 @@
               <i class="bi bi-eye"></i> Ver
             </a>
 
-            {% if can_manage %}
+            {% if can_manage and perms.scrum_app.change_sprint %}
             <a
               href="{% url 'sprint_update' sprint.id %}"
               class="btn btn-sm btn-outline-secondary"
