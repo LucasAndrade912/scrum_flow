@@ -100,8 +100,11 @@
   {% endif %} {% else %}
   <div class="alert alert-info">
     <i class="bi bi-info-circle"></i>
-    {% if perms.scrum_app.add_project %} Você ainda não criou nenhum projeto. {%
-    else %} Você ainda não participa de nenhum projeto. {% endif %}
+    {% if perms.scrum_app.add_project %}
+      Você ainda não criou nenhum projeto.
+    {% else %}
+      Você ainda não participa de nenhum projeto.
+    {% endif %}
   </div>
   {% endif %}
 </div>
