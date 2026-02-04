@@ -4,6 +4,7 @@ from django.contrib import admin
 from django.contrib.auth import views as auth_views
 from django.urls import path
 
+from scrum_app.api_views import ProjectUsersListView, UserProjectsListView
 from scrum_app.views.auth import home_view, register_view
 from scrum_app.views.project import (
     project_create_view,
@@ -50,6 +51,17 @@ urlpatterns = [
     path("login/", auth_views.LoginView.as_view(), name="login"),
     path("logout/", auth_views.LogoutView.as_view(), name="logout"),
     path("register/", register_view, name="register"),
+    # API URLs
+    path(
+        "api/users/<int:user_id>/projects/",
+        UserProjectsListView.as_view(),
+        name="api_user_projects",
+    ),
+    path(
+        "api/projects/<int:project_id>/users/",
+        ProjectUsersListView.as_view(),
+        name="api_project_users",
+    ),
     # Project URLs
     path("projects/", project_list_view, name="project_list"),
     path("projects/new/", project_create_view, name="project_create"),
